@@ -1,9 +1,10 @@
-use presentation::telegram::TelegramBot;
-use settings::Settings;
+use std::error;
+use domain::errors::{*};
 
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn error::Error>> {
     let settings = Settings::new();
 
+    
 }

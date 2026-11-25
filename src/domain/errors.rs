@@ -1,42 +1,35 @@
-use std::{ftm, error};
+use std::{fmt, error};
 
 pub type EResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
+
+pub trait CustomError {}
+pub trait ErrorWithMessage {
+    fn get_message() -> String;
+}
+
+#[derive(error::Error, CustomError)]
 pub struct DotEnvNotLoaded;
-impl error::Error for DotEnvNotLoaded {}
-
-impl fmt::Display for DotEnvNotLoaded {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Cannot load env variables from file.")
-    }
-}
-
-
+#[derive(error::Error, CustomError)]
 pub struct IncorrectValue;
-impl error::Error for IncorrectValue {}
+#[derive(error::Error, CustomError)]
+pub struct DotEnvVarNotFound;
 
-impl fmt::Display for DotEnvNotLoaded {
+
+impl<const M: 'const &str, U: CustomError> ErrorWithMessage for U {
+    #[inline(always)]
+    fn get_message() -> String {
+        M
+    }
+}
+
+impl<U: CustomError> error::Error for U {}
+impl<U: CustomError> fmt::Display for U {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Incorrect value!")
+        write!(f, &M)
     }
 }
 
 
-pub struct DotEnvVarNotFound {
-    var_name: String
-};
-
-impl DotEnvVarNotFound {
-    pub fn new(var_name: String) -> Self {
-        Self {
-            var_name: var_name
-        }
-    }
-}
-
-impl error::Error for DotEnvVarNotFound {}
-impl fmt::Display for DotEnvNotLoaded {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Cannot find env variable {}", self.var_name)
-    }
-}
+// USAGE:
+// IncorrectValue::<"This is incorrect">

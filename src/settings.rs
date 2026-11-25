@@ -5,18 +5,29 @@ use domain::{
     EResult,
     DotEnvNotLoaded,
     DotEnvVarNotFound,
-    IncorrectValue
+    IncorrectValue,
+    AccessLevel
 };
+
 
 
 pub struct SettingsField<T> {
     value: T,
-    public: bool
+    access: AccessLevel
 }
 
-impl SettingsField {
-    pub fn new<T>(value: T, public: bool) {
-        
+impl<T, const A: AccessLevel> SettingsField<T> {
+    pub fn new(value: T) -> Self {
+        Self {
+            value: value,
+            access: A
+        }
+    }
+
+    pub fn value(&self) -> UResult<T> {
+        if (self.access == AccessLevel::Public) {
+            return self.value
+        }
     }
 }
 
@@ -28,7 +39,9 @@ pub struct Settings {
 
 impl fmt::Display for Settings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "")
+        if (self.access == AccessLevel::Public) {
+            return write!(f, "{}", this.value);
+        } 
     }
 }
 
@@ -49,9 +62,7 @@ impl Setting {
         }
     }
 
-    fn _parse_var<T> for T where {
-        T: From<String>
-    } (var_name: &str, default_value: *T) -> EResult<T> {
+    fn _parse_var<T> for T where T: From<String> (var_name: &str, default_value: *T) -> EResult<T> {
         return match env::var(var_name) {
             Ok(var) => T {
                 var.parse().ok_or(

@@ -6,3 +6,6 @@ pub use puzzle_entity::PuzzleEntity;
 
 mod errors;
 pub use errors::{*};
+
+mod enums;
+pub use enums::{*};
