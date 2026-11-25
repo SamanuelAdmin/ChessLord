@@ -1,7 +1,4 @@
-use path::Path;
-
-
 struct PuzzleEntity {
-    png_path: Path,
+    png_path: String,
     solution: String
 }
