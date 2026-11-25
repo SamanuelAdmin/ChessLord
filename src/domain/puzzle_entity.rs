@@ -1,4 +1,4 @@
 struct PuzzleEntity {
-    png_path: String,
-    solution: String
+    pub png_path: String,
+    pub solution: String
 }

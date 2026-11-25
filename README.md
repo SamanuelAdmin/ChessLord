@@ -1,6 +1,6 @@
 # Chess Lord
 
-### [Specification - RU](https://github.com/SamanuelAdmin/ChessLord/SpecificationRU.md)
+### [Specification - RU](https://github.com/SamanuelAdmin/ChessLord/blob/master/SpecificationRU.md)
 
 ### TODO list:
 - [ ] Direct messages logic (/start and /help)
