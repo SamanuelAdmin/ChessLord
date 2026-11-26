@@ -1,6 +1,4 @@
-use std::{fmt, error};
-
-pub type EResult<T> = std::result::Result<T, Box<dyn error::Error>>;
+pub type EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[macro_export]
 macro_rules! define_error {
@@ -13,16 +11,16 @@ macro_rules! define_error {
         }
 
         impl $name {
-            pub fn new( $( $var_name: $var_type ),* ) -> Self {
-                Self {
+            pub fn new( $( $var_name: $var_type ),* ) -> Box<Self> {
+                Box::new(Self {
                     $( $var_name: $var_name ),*
-                }
+                })
             }
         }
 
-        impl error::Error for $name {}
-        impl fmt::Display for $name {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        impl std::error::Error for $name {}
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 write!(
                     f, $message $(, self.$var_name )* 
                 )

@@ -1,5 +1,6 @@
 use dotenv;
 use std::{env, ptr, error, fmt};
+use std::str::FromStr;
 
 use crate::domain::{
     EResult,
@@ -11,20 +12,24 @@ use crate::domain::{
 };
 
 
-fn _get_env_var<T>(var_name: &str, default_value: Option<T>) -> EResult<T> {
+fn _get_env_var<T: FromStr>(var_name: &str, default_value: Option<T>) -> EResult<T> {
     return match env::var(var_name) {
         Ok(var) => {
-            var.parse().ok_or(
+            if let Ok(value) = var.parse() {
+                return Ok(value)
+            } else {
                 Err(IncorrectValue::new(var_name.to_string()))
-            )
+            }
         },
         Err(env::VarError::NotPresent) => {
-            default_value.unwrap_or(
+            if let Some(value) = default_value {
+                Ok(value)
+            } else {
                 Err(DotEnvVarNotFound::new(var_name.to_string()))
-            )
+            }
         },
         Err(env::VarError::NotUnicode(raw)) => {
-            Err(IncorrectValue::new(var_name))
+            Err(IncorrectValue::new(var_name.to_string()))
         }
     }
 }
@@ -45,16 +50,16 @@ impl<T, const A: AccessLevel> SettingsField<T, A> {
         }
     }
 
-    pub fn value(&self) -> EResult<T> {
+    pub fn value(&self) -> EResult<&T> {
         if self.access == AccessLevel::Public {
-            return Ok(self.value)
+            return Ok(&self.value)
         }
 
         Err(PrivateField::new())
     }
 }
 
-impl<T, const A: AccessLevel> fmt::Display for SettingsField<T, { A }> {
+impl<T: fmt::Display, const A: AccessLevel> fmt::Display for SettingsField<T, { A }> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.access == AccessLevel::Public {
             return write!(f, "{}", self.value);
@@ -66,9 +71,9 @@ impl<T, const A: AccessLevel> fmt::Display for SettingsField<T, { A }> {
 
 
 pub struct Settings {
-    tbot_token: SettingsField::<String, { AccessLevel::Private }>,
-    default_frequency: SettingsField::<u32, { AccessLevel::Public }>,
-    default_puzzle_rating: SettingsField::<u32, { AccessLevel::Public }>,
+    pub tbot_token: SettingsField::<String, { AccessLevel::Private }>,
+    pub default_frequency: SettingsField::<u32, { AccessLevel::Public }>,
+    pub default_puzzle_rating: SettingsField::<u32, { AccessLevel::Public }>,
 }
 
 
@@ -79,7 +84,7 @@ impl Settings {
 
         println!("Loading env variables from {}", env_path);
         if let Err(_) = dotenv::from_filename(env_path) {
-            return DotEnvNotLoaded::new(env_path.to_string());
+            return Err(DotEnvNotLoaded::new(env_path.to_string()));
         }
 
         let tbot_token = _get_env_var::<String>("BOT_TOKEN", None)?;

@@ -9,14 +9,15 @@ mod domain;
 mod settings;
 
 use domain::{*};
-use settings::{*};
+use settings::Settings;
 
 use std::ptr;
 
 
 #[tokio::main]
 async fn main() -> EResult<()> {
-    let settings = Settings::new(None);
+    let settings = Settings::new(None)?;
+    println!("{:?}", settings.tbot_token.value());
 
     Ok(())
 }
