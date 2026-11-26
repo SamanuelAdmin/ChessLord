@@ -1,4 +1,4 @@
-pub struct AccessLevel {
+pub enum AccessLevel {
     Public,
     Private
 }

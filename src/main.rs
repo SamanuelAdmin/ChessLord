@@ -1,10 +1,18 @@
-use std::error;
-use domain::errors::{*};
+// mod presentation;
+mod application;
+mod infrastructure;
+mod domain;
+mod settings;
+
+use domain::{*};
+use settings::{*};
+
+use std::ptr;
 
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn error::Error>> {
-    let settings = Settings::new();
+async fn main() -> EResult<()> {
+    let settings = Settings::new(ptr::null());
 
-    
+    Ok(())
 }

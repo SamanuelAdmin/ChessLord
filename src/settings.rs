@@ -1,17 +1,18 @@
 use dotenv;
-use std::{env, ptr, error};
+use std::{env, ptr, error, fmt};
 
 use domain::{
     EResult,
     DotEnvNotLoaded,
     DotEnvVarNotFound,
     IncorrectValue,
+    PrivateField,
     AccessLevel
 };
 
 
 
-pub struct SettingsField<T> {
+pub struct SettingsField<T, const A: AccessLevel> {
     value: T,
     access: AccessLevel
 }
@@ -28,45 +29,36 @@ impl<T, const A: AccessLevel> SettingsField<T> {
         if (self.access == AccessLevel::Public) {
             return self.value
         }
+
+        PrivateField::new()
     }
 }
+
+impl fmt::Display for SettingsField {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.access == AccessLevel::Public {
+            return write!(f, "{}", self.value);
+        } 
+
+        return write!(f, "<PRIVATE>");
+    }
+}
+
 
 pub struct Settings {
-    tbot_token: String,
-    default_frequency: u8,
-    default_puzzle_rating: u16
-}
-
-impl fmt::Display for Settings {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if (self.access == AccessLevel::Public) {
-            return write!(f, "{}", this.value);
-        } 
-    }
+    tbot_token: SettingsField::<String, { AccessLevel::Private }>,
+    default_frequency: SettingsField::<u8, { AccessLevel::Public }>,
+    default_puzzle_rating: SettingsField::<u16, { AccessLevel::Public }>,
 }
 
 
-impl Setting {
-    pub fn new(env_path: *str) -> EResult<Self> {
-        if env_path.is_null() {
-            *env_path = ".env";
-        }
 
-        println!("Loading env variables from {}", env_path);
-        dotenv::from_filename(*env_path).ok_or();
-
-        Self {
-            tbot_token: Self._parse_var::<String>("BOT_TOKEN", ptr::null()),
-            default_frequency: Self._parse_var::<u8>("D_FREQUENCY", 4),
-            default_puzzle_rating: Self._parse_var::<u16>("DPR", 100)
-        }
-    }
-
+impl Settings {
     fn _parse_var<T> for T where T: From<String> (var_name: &str, default_value: *T) -> EResult<T> {
         return match env::var(var_name) {
             Ok(var) => T {
                 var.parse().ok_or(
-                    IncorrectValue::new()
+                    IncorrectValue::new(var_name)
                 )
             }
             Err(env::VarError::NotPresent) => {
@@ -75,8 +67,32 @@ impl Setting {
                 : default_value
             }
             Err(env::VarError::NotUnicode(raw)) => {
-                IncorrectValue::new()
+                IncorrectValue::new(var_name)
             }
+        }
+    }
+
+    pub fn new(env_path: *const str) -> EResult<Self> {
+        if env_path.is_null() {
+            *env_path = ".env";
+        }
+
+        println!("Loading env variables from {}", env_path);
+        if let Err(_) = dotenv::from_filename(*env_path) {
+            return DotEnvNotLoaded::new(env_path);
+        }
+
+        let tbot_token = _parse_var::<String>("BOT_TOKEN", ptr::null())?;
+        let d_frequency = _parse_var::<u8>("D_FREQUENCY", 4)?;
+        let dpr = _parse_var::<u16>("DPR", 100)?;
+
+        Self {
+            tbot_token: SettingsField::<String, { AccessLevel::Private }>::new(
+                tbot_token),
+            default_frequency: SettingsField::<String, { AccessLevel::Private }>::new(
+                d_frequency),
+            default_puzzle_rating: SettingsField::<String, { AccessLevel::Private }>::new(
+                dpr)
         }
     }
 }

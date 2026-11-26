@@ -2,34 +2,37 @@ use std::{fmt, error};
 
 pub type EResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
+#[macro_export]
+macro_rules! define_error {
+    ( $name:ident, $message:expr $(, $var_name:ident : $var_type:ty)* $(,)? ) => {
+        #[derive(Debug)]
+        pub struct $name {
+            $(
+                $var_name: $var_type,
+            )*
+        }
 
-pub trait CustomError {}
-pub trait ErrorWithMessage {
-    fn get_message() -> String;
+        impl $name {
+            pub fn new( $( $var_name: $var_type ),* ) -> Self {
+                Self {
+                    $( $var_name: $var_name ),*
+                }
+            }
+        }
+
+        impl error::Error for $name {}
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(
+                    f, $message $(, self.$var_name )* 
+                )
+            }
+        }
+    };
 }
 
-#[derive(error::Error, CustomError)]
-pub struct DotEnvNotLoaded;
-#[derive(error::Error, CustomError)]
-pub struct IncorrectValue;
-#[derive(error::Error, CustomError)]
-pub struct DotEnvVarNotFound;
 
-
-impl<const M: 'const &str, U: CustomError> ErrorWithMessage for U {
-    #[inline(always)]
-    fn get_message() -> String {
-        M
-    }
-}
-
-impl<U: CustomError> error::Error for U {}
-impl<U: CustomError> fmt::Display for U {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, &M)
-    }
-}
-
-
-// USAGE:
-// IncorrectValue::<"This is incorrect">
+define_error!(IncorrectValue, "Incorrect value of variable {}", var_name: String);
+define_error!(DotEnvVarNotFound, "Cannot find environment variable {}", var_name: String);
+define_error!(DotEnvNotLoaded, "Cannot load env file with path: {}", path: String);
+define_error!(PrivateField, "Cannot access private field");
