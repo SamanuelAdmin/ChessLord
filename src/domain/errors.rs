@@ -1,7 +1,6 @@
 pub type EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-#[macro_export]
-macro_rules! define_error {
+#[macro_export] macro_rules! define_error {
     ( $name:ident, $message:expr $(, $var_name:ident : $var_type:ty)* $(,)? ) => {
         #[derive(Debug)]
         pub struct $name {

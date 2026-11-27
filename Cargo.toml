@@ -7,6 +7,6 @@ edition = "2024"
 chess-puzzle-picker = "0.2.0"
 datetime = "0.5.2"
 dotenv = "0.15.0"
-teloxide = "0.17.0"
+teloxide = { version = "0.17.0", features=["full"] }
 tokio = { version="1.54.1", features=["full"] }
 uuid = { version="1.29.3", features=["v4", "std"] }

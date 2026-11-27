@@ -50,12 +50,8 @@ impl<T, const A: AccessLevel> SettingsField<T, A> {
         }
     }
 
-    pub fn value(&self) -> EResult<&T> {
-        if self.access == AccessLevel::Public {
-            return Ok(&self.value)
-        }
-
-        Err(PrivateField::new())
+    pub fn value(&self) -> &T {
+        return &self.value
     }
 }
 

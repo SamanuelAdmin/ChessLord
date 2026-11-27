@@ -1,41 +1,67 @@
-use teloxide::prelude::*;
-use teloxide::types::User;
+use teloxide::{
+    dispatching::HandlerExt, prelude::*, sugar::request::RequestReplyExt, types::Dice,
+    utils::command::BotCommands, dispatching::DefaultKey
+};
 
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
+use super::commands::{*};
+use super::errors::{*};
+use crate::domain::EResult;
 
 
-
-struct TelegramBot {
+pub struct TelegramBot {
     bot: Bot,
-    schema: Update,
-    dispatcher: Dispatcher
+    dispatcher: Dispatcher<Bot, DispatcherError, DefaultKey>
 }
 
 impl TelegramBot {
-    pub async fn new(token: String) -> Result<Self, Error> {
+    pub async fn new(token: String) -> EResult<Self> {
         let bot = Bot::new(token);
 
-        Self {
-            bot: bot
+        let handler = dptree::entry()
+            .branch(
+                dptree::filter(|m: ChatMemberUpdated| {
+                    m.old_chat_member.is_owner() || m.old_chat_member.is_administrator()
+                })
+                .filter_command::<AdminCommand>()
+                .endpoint(|msg: Message, bot: Bot, cmd: AdminCommand| async move {
+                    Self::admin_command_processor(msg, bot, cmd)
+                }),
+            );
+
+        let dispatcher = Dispatcher::builder(bot, handler)
+            .dependencies(dptree::deps![])
+            .enable_ctrlc_handler()
+            .build();
+
+        Ok(Self {
+            bot: bot,
+            dispatcher: dispatcher
+        })
+    }
+
+    pub async fn run(mut self) -> EResult<()> {
+        self.dispatcher.dispatch().await; 
+        Ok(())
+    }
+
+    pub async fn admin_command_processor(msg: Message, bot: Bot, cmd: AdminCommand) -> EResult<()> {
+        match cmd {
+            AdminCommand::Start => {
+                bot.send_message(msg.chat.id, "Bot has been started by admin.".to_string()).await?;
+                Ok(())
+            }
+            AdminCommand::Stop => {
+                bot.send_message(msg.chat.id, "Bot has been stopped by admin.".to_string()).await?;
+                Ok(())
+            }
+            AdminCommand::Frequency(new_freq) => {
+                bot.send_message(msg.chat.id, format!("Changed frequency to {}", new_freq).to_string()).await?;
+                Ok(())
+            }
+            AdminCommand::Rating(new_rating) => {
+                bot.send_message(msg.chat.id, format!("Changed rating to {}", new_rating).to_string()).await?;
+                Ok(())
+            }
         }
-    }
-
-    pub async fn process_text_message(bot: Bot, user: User, message_text: String) -> Result<(), Error> {
-        /*
-        The id of a chat with a user is the same as his telegram_id
-        from the bot's perspective.
-
-        Injected dependencies:
-        - Bot is provided by the Dispatcher::dispatch
-        - User is provided by the (1)
-        - String is provided by the (2)
-        */
-        bot.send_message(user.id, format!("Hi! You sent: {message_text}"));
-        Ok(())
-    }
-
-    pub async fn run() -> Result<(), Error> {
-        Dispatcher::builder(bot, schema).build().dispatch().await;
-        Ok(())
     }
 }

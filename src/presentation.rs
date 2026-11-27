@@ -1,2 +1,1 @@
-mod telegram;
-pub use telegram;
+pub mod telegram;
